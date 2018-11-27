@@ -147,11 +147,20 @@ class CircBuff {
     if (left()==0) return null;
     float[] ans = new float[left()];
     if (bufrd <  bufwr) {
-      arrayCopy(buff, bufrd, ans, 0, left());
+      for (int i = 0; i < left();++i) {
+        ans[i] = buff[i+bufrd];
+      }
+      //arrayCopy(buff, bufrd, ans, 0, left());
       bufrd=bufwr;
     } else {
-      arrayCopy(buff, bufrd, ans, 0, size-bufrd);
-      arrayCopy(buff, 0, ans, size-bufrd, left()-(size-bufrd));
+      for (int i = 0; i < size-bufrd; ++i) {
+        ans[i] = buff[i+bufrd];
+      }
+      //arrayCopy(buff, bufrd, ans, 0, size-bufrd);
+      for (int i=0; i<left()-(size-bufrd);++i) {
+        ans[i+size-bufrd]= buff[i];
+      }
+      //arrayCopy(buff, 0, ans, size-bufrd, left()-(size-bufrd));
       bufrd=bufwr;
     }
     return ans;
@@ -272,7 +281,10 @@ void draw()
   float[] xr = xbuff.readall();
   if (xr.length >= FFT_SIZE) {
     // copy in last part into FFT buffer
-    arrayCopy(xr, xr.length-FFT_SIZE, xfft, 0, FFT_SIZE);
+    for (int i = 0; i < FFT_SIZE; ++i) {
+      xfft[i] = xr[i+xr.length-FFT_SIZE];
+    }
+    //arrayCopy(xr, xr.length-FFT_SIZE, xfft, 0, FFT_SIZE);
   } else {
     // copy last part of array into first part
     for (int i = 0; i< (FFT_SIZE-xr.length); ++i) {
