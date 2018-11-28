@@ -244,7 +244,7 @@ void setup()
 }
 int FFT_SIZE=1024;
 
-double[] xfft = new double[FFT_SIZE];
+double[] xfft = new double[FFT_SIZE*2];
 
 float noisefloor=0;
 // this trick keeps the screen on.
@@ -264,11 +264,12 @@ void draw()
     text("CALIBRATING... "+nf(kf, 1, 5), width/2, height/2);
     if (kf < .001) {
       for (int i=0; i<NR; ++i) {
-        if (e[i] > noisefloor) noisefloor=e[i];
+        if (e[i]*.8 > noisefloor) noisefloor=e[i]*.8;
       }
     }
     return;
   }
+  noisefloor=noisefloor*.999;
   if (!oktodraw) return;
   float nextfreq=1.0;// next freq tick mark
   float nextftik=1.0; // minor ticks
@@ -279,27 +280,32 @@ void draw()
   //  rect(0,0,width,height/8);
 
   float[] xr = xbuff.readall();
-  if (xr.length >= FFT_SIZE) {
-    // copy in last part into FFT buffer
-    for (int i = 0; i < FFT_SIZE; ++i) {
-      xfft[i] = xr[i+xr.length-FFT_SIZE];
-    }
-    //arrayCopy(xr, xr.length-FFT_SIZE, xfft, 0, FFT_SIZE);
-  } else {
-    // copy last part of array into first part
-    for (int i = 0; i< (FFT_SIZE-xr.length); ++i) {
-      xfft[i] = xfft[i+FFT_SIZE-xr.length];
-    }
-    // copy entire incoming buffer to end
-    for (int i = 0; i < xr.length; ++i) {
-      xfft[i+(FFT_SIZE-xr.length)] = xr[i];
-    }
-  }
   if (xr != null) {
+    if (xr.length >= FFT_SIZE) {
+      // copy in last part into FFT buffer
+      for (int i = 0; i < FFT_SIZE; ++i) {
+        xfft[i*2] = xr[i+xr.length-FFT_SIZE];
+      }
+      //arrayCopy(xr, xr.length-FFT_SIZE, xfft, 0, FFT_SIZE);
+    } else {
+      // copy last part of array into first part
+      for (int i = 0; i< (FFT_SIZE-xr.length); ++i) {
+        xfft[i*2] = xfft[(i+xr.length)*2];
+      }
+      // copy entire incoming buffer to end
+      for (int i = 0; i < xr.length; ++i) {
+        xfft[i+(FFT_SIZE-xr.length)] = xr[i];
+      }
+    }
     println("got "+xr.length+" readings!");
+    fill(0);
+    noStroke();
+    rect(0,0,width,height/8);
+    stroke(255);
+    fill(255);
     for (int i=0; i< xfft.length-1; ++i) {
       float graphx = i*width/FFT_SIZE;
-      line(graphx, height/16, graphx, height/16+(float)xfft[i]);
+      point(graphx, height/16+atan((float)xfft[i]*pi)/pi*height/16.);
     }
   }
   //for (int i=0;i<NR;++i){
@@ -368,16 +374,6 @@ void draw()
       }
     }
 
-    if (i>3 && ep[i-1] > 0 && ep[i] <= 0 &&
-      ke[i] > maxdisp*.8) {
-      stroke(255, 128, 0);
-      strokeWeight(3);
-      line(i*width/NR, height*3/16+10, i*width/NR, height*3/16-10);
-      textSize(25);
-      text(nf(x2f(i), 1, 2), i*width/NR, 
-        height*3/16-20);
-    }
-
     strokeWeight(1);
 
     switch(om) {
@@ -396,8 +392,24 @@ void draw()
     }
 
     strokeWeight(1);
-    rect(i*width/NR, wfy, (i+1)*width/NR-i*width/NR, 0);//+d[i]*0*10000.);
+    rect(i*width/NR, wfy, (i+1)*width/NR-i*width/NR, 1);//+d[i]*0*10000.);
   }
+  textSize(25);
+  fill(255,128,0);
+  stroke(255, 128, 0);
+  strokeWeight(3);
+  for (int i=9;i<NR-9;++i){
+    // peak detection
+    if (i>3 && ep[i-1] > 0 && ep[i] <= 0 &&
+      ke[i] > maxdisp*.8) {
+      line(i*width/NR, height*3/16+10, i*width/NR, height*3/16-10);
+      text(nf(x2f(i), 1, 2), i*width/NR, 
+        height*3/16-20);
+      rect(i*width/NR,wfy,1,2);
+    }
+
+  }
+  
   if (!firstDraw) filter(scroll);
   firstDraw=false;
 }
